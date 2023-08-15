@@ -224,6 +224,57 @@ defmodule AshGraphql.ReadTest do
     assert %{data: %{"postLibrary" => [%{"text" => "foo"}]}} = result
   end
 
+  test "a list read action returns expected list if argument is present (nil or actual value) or not present" do
+    AshGraphql.Test.Post
+    |> Ash.Changeset.for_create(:create, score: 1.23, published: true)
+    |> AshGraphql.Test.Api.create!()
+
+    AshGraphql.Test.Post
+    |> Ash.Changeset.for_create(:create, score: nil, published: true)
+    |> AshGraphql.Test.Api.create!()
+
+    specific_score_query =
+      """
+      query PostScore($score: Float) {
+        postScore(score: $score) {
+          id
+          score
+        }
+      }
+      """
+
+    Absinthe.run(specific_score_query, AshGraphql.Test.Schema,
+      variables: %{
+        "score" => 1.23
+      }
+    )
+    |> dbg()
+
+    # TODO: assert you get a list of just the one post with `1.23` score.
+
+    Absinthe.run(specific_score_query, AshGraphql.Test.Schema,
+      variables: %{
+        "score" => nil
+      }
+    )
+    |> dbg()
+
+    # TODO: assert you get a list of just the one post with `nil` score.
+
+    """
+    query {
+      postScore {
+        id
+        score
+      }
+    }
+    """
+    |> Absinthe.run(AshGraphql.Test.Schema)
+    |> dbg()
+
+    # TODO: assert you see all the posts, no matter the score
+  end
+
   test "a read with custom set types works" do
     AshGraphql.Test.Post
     |> Ash.Changeset.for_create(:create,

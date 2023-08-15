@@ -233,6 +233,28 @@ defmodule AshGraphql.Test.Post do
     read :score do
       argument(:score, :float, allow_nil?: true)
 
+      # To help demonstrate the issue I am seeing,
+      # I recommend running my WIP test with:
+      #
+      # $ mix test.watch test/read_test.exs:227
+      #
+      # In the below `prepare` block I am debug printing the query. In the last
+      # of the three test queries there is no argument on the graph side of the
+      # relationship yet the `arguments` will sill show `%{score: nil}`. This
+      # make it difficult to utilize the argument as a filter both allowing
+      # users to list value that are `nil` while at the same time returning a
+      # full list when no arguments are passed in.
+      #
+      # query #=> #Ash.Query<
+      #   resource: AshGraphql.Test.Post,
+      #   arguments: %{score: nil},
+      #   select: [:score, :id]
+      # >
+
+      prepare(fn query, _ ->
+        dbg(query)
+      end)
+
       filter(expr(score == ^arg(:score)))
     end
 
